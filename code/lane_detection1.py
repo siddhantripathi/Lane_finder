@@ -17,7 +17,7 @@ def select_white_yellow(image):
     lower_yellow = np.uint8([ 10,   0, 100])
     upper_yellow = np.uint8([ 40, 255, 255])
     yellow_mask = cv2.inRange(converted, lower_yellow, upper_yellow)
-    # combine the mask
+    
     mask = cv2.bitwise_or(white_mask, yellow_mask)
     return cv2.bitwise_and(image, image, mask = mask)
 
@@ -31,14 +31,12 @@ def detect_edges(image, low_threshold=50, high_threshold=150):
     return cv2.Canny(image, low_threshold, high_threshold)
 
 def filter_region(image, vertices):
-    """
-    Create the mask using the vertices and apply it to the input image
-    """
+   
     mask = np.zeros_like(image)
     if len(mask.shape)==2:
         cv2.fillPoly(mask, vertices, 255)
     else:
-        cv2.fillPoly(mask, vertices, (255,)*mask.shape[2]) # in case, the input image has a channel dimension        
+        cv2.fillPoly(mask, vertices, (255,)*mask.shape[2]) # in case the input image has a channel dimension        
     return cv2.bitwise_and(image, mask)
     
 def select_region(image):
@@ -61,26 +59,25 @@ def hough_lines(image):
     return cv2.HoughLinesP(image, rho=1, theta=np.pi/180, threshold=20, minLineLength=20, maxLineGap=300)
 
 def average_slope_intercept(lines):
-    left_lines    = [] # (slope, intercept)
-    left_weights  = [] # (length,)
-    right_lines   = [] # (slope, intercept)
-    right_weights = [] # (length,)
+    left_lines    = [] 
+    left_weights  = [] 
+    right_lines   = []
+    right_weights = [] 
     
     for line in lines:
         for x1, y1, x2, y2 in line:
             if x2==x1:
-                continue # ignore a vertical line
+                continue 
             slope = (y2-y1)/(x2-x1)
             intercept = y1 - slope*x1
             length = np.sqrt((y2-y1)**2+(x2-x1)**2)
-            if slope < 0: # y is reversed in image
+            if slope < 0:
                 left_lines.append((slope, intercept))
                 left_weights.append((length))
             else:
                 right_lines.append((slope, intercept))
                 right_weights.append((length))
-    
-    # add more weight to longer lines    
+       
     left_lane  = np.dot(left_weights,  left_lines) /np.sum(left_weights)  if len(left_weights) >0 else None
     right_lane = np.dot(right_weights, right_lines)/np.sum(right_weights) if len(right_weights)>0 else None
     
